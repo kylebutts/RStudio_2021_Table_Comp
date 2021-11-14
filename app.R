@@ -1,23 +1,49 @@
-
 library(tidyverse)
 library(shiny)
-library(DT)
 library(glue)
-library(gt)
-library(gtExtras)
+library(rvest)
 
 # ---- Load Data ---------------------------------------------------------------
-pokemon <- read.csv("data/FirstGenPokemon.csv") |> 
+pokemon <- read_csv("data/FirstGenPokemon.csv") |> 
     mutate(
       number = str_pad(Number, width = "3", pad = "0", side = "left"),
       name = Name
     ) |> 
     arrange(number)
 
-classification <- read.csv("data/pokemon.csv") |> 
-  select(name, classification)
+classification <- read_csv("data/pokemon.csv") |> 
+    select(name, classification)
   
 pokemon <- left_join(pokemon, classification)
+
+
+
+# ---- Extract where to catch --------------------------------------------------
+where_to_catch <- \(name) {
+    if(name == "Mr. Mime") name <- "mr-mime"
+    if(name == "Nidoran (M)") name <- "nidoran-m"
+    if(name == "Nidoran (F)") name <- "nidoran-f"
+  
+    simple <- read_html(glue("https://pokemondb.net/pokedex/{str_to_lower(name)}"))
+    
+    rows <- simple |> 
+      # Where to find
+      html_elements("h2:contains('Where to find') + div") |> 
+      html_elements("table") |> 
+      html_elements("tr")
+      
+    location <- lapply(rows, \(row){ 
+      if(!is.na(html_element(row, ".igame.red"))) {
+        row |> 
+          html_element("td") |> 
+          html_text()
+      }
+    })
+    
+    location <- unlist(location)
+    
+    return(location)
+}
 
 
 ui <- div(id = "pokemon_color", class="min-h-screen flex flex-col text-gray-800",
@@ -52,7 +78,7 @@ ui <- div(id = "pokemon_color", class="min-h-screen flex flex-col text-gray-800"
                         ),
                         # imageOutput without defaults
                         # img() in there for initialization
-                        div(id="pokemon_img", class="shiny-image-output", img())
+                        div(id="pokemon_img", class="shiny-html-output", img())
                     ),
                     # ---- Info ------------------------------------------------
                     div(class="py-4",
@@ -65,6 +91,10 @@ ui <- div(id = "pokemon_color", class="min-h-screen flex flex-col text-gray-800"
                     # ---- Types multiplier ------------------------------------
                     div(class="pt-8 ",
                         uiOutput("pokemon_rel")
+                    ),
+                    # ---- Where to catch --------------------------------------
+                    div(class="pt-8 ",
+                        uiOutput("pokemon_catch")
                     )
                 )
             )
@@ -97,17 +127,24 @@ server <- function(input, output) {
         )
     })
     
-    output$pokemon_img <- renderImage({
+    output$pokemon_img <- renderUI({
       idx <- pokemon$name == input$pokemon_name
       num <- pokemon[idx, "number"]
       name <- pokemon[idx, "name"]
-      path <- paste0("www/Pokemon/", num, name, ".png", collapse="")
-      if(name == "Mr. Mime") path <- "www/Pokemon/122Mr Mime.png"
       
-      list(
-        src=path, 'data-adaptive-background'='1', class="w-48 h-48 object-cover "
+      path <- glue("https://raw.githubusercontent.com/kylebutts/RStudio_2021_Table_Comp/main/www/pokemon/{num}{name}.png")
+      if(name == "Mr. Mime") path <- "https://raw.githubusercontent.com/kylebutts/RStudio_2021_Table_Comp/main/www/pokemon/122Mr Mime.png"
+      
+      tagList(
+        tags$script(HTML("
+            $.adaptiveBackground.run({parent:'#pokemon_color'});
+            var col = $('#pokemon_color').css('background-color');
+        ")),
+        img(
+          src=path, 'data-adaptive-background'='1', class="w-48 h-48 object-cover "
+        )
       )
-    }, deleteFile = F)
+    })
     
     
     output$pokemon_bio <- renderUI({
@@ -154,7 +191,7 @@ server <- function(input, output) {
           \(x, y) {
             div(class="flex flex-col h-48 justify-end",
                 span(class="text-center font-semibold", x),
-                div(id=glue("stat-bar-y"), class = glue("w-3/5 mx-auto h-[{x}] bg-white ")),
+                div(class = glue("stat-bar w-3/5 mx-auto h-[{x}] bg-white ")),
                 h3(class="pt-2 text-center font-light tracking-wide", y)
             )
       })
@@ -225,7 +262,12 @@ server <- function(input, output) {
       )
     })
     
-
+    output$pokemon_catch <- renderUI({
+      tagList(
+        h2(class="text-xs font-bold", "Where to get in Pokemon Red/Blue/Yellow"),
+        p(class="pt-2", where_to_catch(input$pokemon_name))
+      )
+    })
     
 }
 
