@@ -1,0 +1,66 @@
+body {
+    font-size: 16px;
+}
+
+/* 
+#pokemon_img::before{
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+}
+*/
+
+#pokemon_img img {
+    position: relative;
+    z-index: 10;
+}
+
+#header .form-control.selectize-control {
+    margin-bottom: 0px;
+}
+#header .selectize-input {
+    @apply bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 shadow-lg rounded-lg border-2 border-white;
+}
+#header .selectize-input item {
+    @apply font-semibold tracking-wide;
+}
+#header .selectize-input.focus {
+    @apply shadow-none;   
+}
+#header .selectize-dropdown, .selectize-dropdown.form-control {
+    @apply bg-white backdrop-filter backdrop-blur-lg bg-opacity-90 shadow-lg rounded-lg border-2 border-white;
+}
+#header .selectize-dropdown [data-selectable] {
+    @apply font-semibold hover:bg-gray-900 hover:text-white;
+}
+#header .selectize-dropdown .active { 
+    @apply font-semibold hover:bg-gray-900 hover:text-white;
+}
+
+
+/* Data Table */
+
+#pokedex .dataTables_filter {
+    @apply py-4;
+}
+#pokedex .dataTables_wrapper .dataTables_paginate {
+    @apply py-4;
+}
+#pokedex .dataTables_wrapper .dataTables_paginate .paginate_button.current, #pokedex .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    @apply bg-none;
+}
+#pokedex .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    @apply bg-none; 
+}
+
+
+
+
+
