@@ -1,4 +1,4 @@
-library(data.table)
+
 library(tidyverse)
 library(shiny)
 library(DT)
@@ -7,15 +7,17 @@ library(gt)
 library(gtExtras)
 
 # ---- Load Data ---------------------------------------------------------------
-pokemon <- data.table::fread("data/FirstGenPokemon.csv") |> 
-    DT(j = number :=  str_pad(Number, width = "3", pad = "0", side = "left")) |> 
-    DT(j = name := Name) |> 
-    DT(i = order(number))
+pokemon <- read.csv("data/FirstGenPokemon.csv") |> 
+    mutate(
+      number = str_pad(Number, width = "3", pad = "0", side = "left"),
+      name = Name
+    ) |> 
+    arrange(number)
 
-classification <- data.table::fread("data/pokemon.csv") |> 
-  DT(j = c("name", "classification"))
+classification <- read.csv("data/pokemon.csv") |> 
+  select(name, classification)
   
-pokemon <- merge(pokemon, classification)
+pokemon <- left_join(pokemon, classification)
 
 
 ui <- div(id = "pokemon_color", class="min-h-screen flex flex-col text-gray-800",
@@ -171,7 +173,7 @@ server <- function(input, output) {
       types <- c("Normal_Dmg", "Fire_Dmg", "Water_Dmg", "Electric_Dmg", "Grass_Dmg", "Ice_Dmg", "Fighting_Dmg", "Poison_Dmg", "Ground_Dmg", "Flying_Dmg", "Psychic_Dmg", "Bug_Dmg", "Rock_Dmg", "Ghost_Dmg", "Dragon_Dmg")
       
       weak <- purrr::map(types, \(x) {
-          if(pokemon[idx, ..x] == 0.5) {
+          if(pokemon[idx, x] == 0.5) {
               type <- str_remove(x, "_Dmg")
               img(class = "w-5 h-5", 
                   src = glue("types/{type}.png"), 
@@ -181,7 +183,7 @@ server <- function(input, output) {
       })
       
       average <- purrr::map(types, \(x) {
-        if(pokemon[idx, ..x] == 1) {
+        if(pokemon[idx, x] == 1) {
           type <- str_remove(x, "_Dmg")
           img(class = "w-5 h-5", 
               src = glue("types/{type}.png"), 
@@ -191,7 +193,7 @@ server <- function(input, output) {
       })
       
       strong <- purrr::map(types, \(x) {
-        if(pokemon[idx, ..x] == 2) {
+        if(pokemon[idx, x] == 2) {
           type <- str_remove(x, "_Dmg")
           img(class = "w-5 h-5", 
               src = glue("types/{type}.png"), 
